@@ -38,3 +38,18 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/healthcare-backend:latest
             ghcr.io/${{ env.OWNER_LC }}/healthcare-backend:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            sudo k3s kubectl rollout restart deployment/backend
+            sudo k3s kubectl rollout status deployment/backend --timeout=90s
